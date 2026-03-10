@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  app:
+    image: eventflow
+    container_name: eventflow-app
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=user
+      - RABBITMQ_PASSWORD=password
+    depends_on:
+      rabbitmq:
+        condition: service_healthy  
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: eventflow-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+
+volumes:
+  rabbitmq-data:
+  
+    
+  
