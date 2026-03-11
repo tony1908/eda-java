@@ -7,7 +7,7 @@ public class Application {
         try {
             Container container = new Container();
             container.register(EventBus.class, InMemoryEventBus.class);
-            container.register(EventSerializer.class, JsonEventSerializer.class);
+            container.register(EventSerializer.class, JsonEventSerializer.class, Lifecycle.SINGLETON);
             container.register(NotificationService.class, ConsoleNotification.class);
             container.register(OrderService.class, OrderService.class);
 
