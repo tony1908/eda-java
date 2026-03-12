@@ -25,7 +25,7 @@ public class Application {
         EventSerializer serializer = new JsonEventSerializer();
         EventBus eventBus = new KafkaEventBus(serializer);
         OrderSseResource sseResource = new OrderSseResource();
-        InventoryService inventoryService = new InventoryService();
+        InventoryService inventoryService = new InventoryService(eventBus);
 
         ResourceConfig config = new ResourceConfig()
                 .register(new AppBinder(serializer, eventBus, sseResource))
