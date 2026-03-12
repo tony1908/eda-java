@@ -8,6 +8,8 @@ import com.edacourse.api.infrastructure.messaging.JsonEventSerializer;
 import com.edacourse.api.config.ObjectMapperProvider;
 import com.edacourse.api.resource.OrderResource;
 import com.edacourse.api.infrastructure.messaging.InventorySubcriber;
+import com.edacourse.api.infrastructure.messaging.SseBridgeSubscriber;
+import com.edacourse.api.resource.OrderSseResource;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -21,14 +23,16 @@ public class Application {
     public static void main(String[] args) throws Exception {
         EventSerializer serializer = new JsonEventSerializer();
         EventBus eventBus = new KafkaEventBus(serializer);
+        OrderSseResource sseResource = new OrderSseResource();
 
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus))
+                .register(new AppBinder(serializer, eventBus, sseResource))
                 .register(JacksonFeature.class)
                 .register(ObjectMapperProvider.class)
                 .register(OrderResource.class);
 
         new InventorySubcriber(eventBus);
+        new SseBridgeSubscriber(eventBus, serializer, sseResource);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
