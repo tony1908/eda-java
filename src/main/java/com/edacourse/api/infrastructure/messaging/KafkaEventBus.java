@@ -1,4 +1,4 @@
-package com.edacourse.solid;
+package com.edacourse.api.infrastructure.messaging;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

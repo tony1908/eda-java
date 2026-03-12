@@ -10,13 +10,13 @@ public class Order {
     private final String product;
     private final double price;
     private final int quantity;
-    private Status status; 
+    private Status status;
     private final Instant createdAt;
-    private final Instant cancelledAt;
-    private final String cancelReason;
+    private Instant cancelledAt;
+    private String cancelReason;
 
     public Order(String product, double price, int quantity) {
-        this.id = UUID.randomUUID().toString().substring(0,8)
+        this.id = UUID.randomUUID().toString().substring(0,8);
         this.product = product;
         this.price = price;
         this.quantity = quantity;

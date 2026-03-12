@@ -11,8 +11,8 @@ import com.edacourse.api.dto.OrderResponse;
 import com.edacourse.api.domain.Order;
 
 @Path("/api/orders")
-@Produces(MediaType.APLICATION_JSON)
-@Consume(MediaType.APLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
     private final OrderService orderService;
 
@@ -23,7 +23,7 @@ public class OrderResource {
 
     @POST
     public Response createOrder(CreateOrderRequest request) {
-        Order order = orderService.createOrder(request)
+        Order order = orderService.createOrder(request);
         return Response.status(Response.Status.CREATED).entity(OrderResponse.from(order)).build();
     }
 

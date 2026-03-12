@@ -16,7 +16,7 @@ public class OrderResponse {
         @JsonProperty("id") String id,
         @JsonProperty("product") String product,
         @JsonProperty("price") double price,
-        @JsonProperty("created_at") Instant createdAt,
+        @JsonProperty("created_at") Instant createdAt
     ) {
         this.id = id;
         this.product = product;

@@ -1,4 +1,4 @@
-package com.edacourse.solid;
+package com.edacourse.api.di;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;

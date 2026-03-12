@@ -1,4 +1,4 @@
-package com.edacourse.solid;
+package com.edacourse.api.infrastructure.messaging;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;

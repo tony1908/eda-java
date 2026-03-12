@@ -1,4 +1,4 @@
-package com.edacourse.solid;
+package com.edacourse.api.infrastructure.messaging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

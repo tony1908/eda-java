@@ -4,10 +4,11 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline
 COPY src ./src
-RUN mvn package
+RUN mvn package -DskipTests && rm -f /app/target/original-*.jar
 
 # Stage 2: Run
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/target/*-jar-with-dependencies.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

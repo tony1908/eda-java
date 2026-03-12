@@ -1,4 +1,4 @@
-package.com.edacourse.api.config;
+package com.edacourse.api.config;
 
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import com.edacourse.api.infrastructure.messaging.EventSerializer;
@@ -17,12 +17,13 @@ public class AppBinder extends AbstractBinder {
         this.eventBus = eventBus;
     }
 
-    @Override void configure() {
+    @Override
+    protected void configure() {
         bind(serializer).to(EventSerializer.class);
         bind(eventBus).to(EventBus.class);
 
-        bind(InMemoryOrderRepository.class).to(OrderRepository.class).in(Singleton.class)
-        bind(OrderService.class).to(OrderService.class).in(Singleton.class)
+        bind(InMemoryOrderRepository.class).to(OrderRepository.class).in(Singleton.class);
+        bind(OrderService.class).to(OrderService.class).in(Singleton.class);
     }
 
 }

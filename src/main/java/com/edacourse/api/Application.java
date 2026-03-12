@@ -1,32 +1,43 @@
-package com.edacourse.solid;
+package com.edacourse.api;
 
-import java.util.List;
+import com.edacourse.api.config.AppBinder;
+import com.edacourse.api.infrastructure.messaging.EventBus;
+import com.edacourse.api.infrastructure.messaging.KafkaEventBus;
+import com.edacourse.api.infrastructure.messaging.EventSerializer;
+import com.edacourse.api.infrastructure.messaging.JsonEventSerializer;
+import com.edacourse.api.config.ObjectMapperProvider;
+import com.edacourse.api.resource.OrderResource;
+import com.edacourse.api.infrastructure.messaging.InventorySubcriber;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.grizzly.http.server.HttpServer;
+
+import java.net.URI;
 
 public class Application {
-    public static void main(String[] args) {
-        try {
-            Container container = new Container();
-            container.register(EventBus.class, InMemoryEventBus.class);
-            container.register(EventSerializer.class, JsonEventSerializer.class, Lifecycle.SINGLETON);
-            container.register(NotificationService.class, ConsoleNotification.class);
-            container.register(OrderService.class, OrderService.class);
+    private static final String BASE_URI = "http://0.0.0.0:8080/";
 
-            Thread.sleep(20000);
+    public static void main(String[] args) throws Exception {
+        EventSerializer serializer = new JsonEventSerializer();
+        EventBus eventBus = new KafkaEventBus(serializer);
 
-            EventBus eventBus = container.resolve(EventBus.class);
-            eventBus.subscribe("orders", OrderEvent.class, event -> {
-                System.out.println("Evento recibido: " + event);
-            });
+        ResourceConfig config = new ResourceConfig()
+                .register(new AppBinder(serializer, eventBus))
+                .register(JacksonFeature.class)
+                .register(ObjectMapperProvider.class)
+                .register(OrderResource.class);
 
-            OrderService orderService = container.resolve(OrderService.class);
-            orderService.createOrder("Producto 1", 10.99);
+        new InventorySubcriber(eventBus);
 
-            Thread.sleep(10000);
+        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Apagando");
+            server.shutdownNow();
             eventBus.close();
-        } catch(Exception e) {
-            System.out.println("Fallo");
-        }
-        
+        }));
+
+        Thread.currentThread().join();
     }
 }

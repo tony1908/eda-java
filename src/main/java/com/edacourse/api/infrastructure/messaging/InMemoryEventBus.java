@@ -1,4 +1,4 @@
-package com.edacourse.solid;
+package com.edacourse.api.infrastructure.messaging;
 
 import java.util.List;
 import java.util.Map;

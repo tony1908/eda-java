@@ -1,4 +1,4 @@
-package com.edacourse.solid;
+package com.edacourse.api.infrastructure.messaging;
 
 public interface EventSerializer {
     String serialize(Object event);
