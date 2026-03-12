@@ -48,11 +48,6 @@ public class RabbitMQEventBus implements EventBus {
 
     @Override
     public void publish(String topic, Object event) {
-        publish(topic, event, "");
-    }
-
-    @Override
-    public void publish(String topic, Object event, String key) {
         try {
             channel.exchangeDeclare(topic, "fanout", true);
             String message = serializer.serialize(event);
