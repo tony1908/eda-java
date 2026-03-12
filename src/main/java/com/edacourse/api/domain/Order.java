@@ -11,12 +11,14 @@ public class Order {
     private final double price;
     private final int quantity;
     private Status status;
+    private String customerId;
     private final Instant createdAt;
     private Instant cancelledAt;
     private String cancelReason;
 
-    public Order(String product, double price, int quantity) {
+    public Order(String customerId, String product, double price, int quantity) {
         this.id = UUID.randomUUID().toString().substring(0,8);
+        this.customerId = customerId;
         this.product = product;
         this.price = price;
         this.quantity = quantity;
@@ -31,6 +33,7 @@ public class Order {
     }
 
     public String getId() { return id; }
+    public String getCustomerId() { return customerId; }
     public String getProduct() { return product; }
     public double getPrice() { return price; }
     public Instant getCreatedAt() { return createdAt; }

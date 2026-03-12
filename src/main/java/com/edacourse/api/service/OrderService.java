@@ -3,8 +3,8 @@ package com.edacourse.api.service;
 import com.edacourse.api.repository.OrderRepository;
 import com.edacourse.api.domain.Order;
 import com.edacourse.api.infrastructure.messaging.EventBus;
-import com.edacourse.api.infrastructure.messaging.OrderCreatedEvent;
-import com.edacourse.api.infrastructure.messaging.OrderCanceledEvent;
+import com.edacourse.api.domain.event.OrderCreatedEvent;
+import com.edacourse.api.domain.event.OrderCanceledEvent;
 import com.edacourse.api.dto.CreateOrderRequest;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -22,9 +22,14 @@ public class OrderService {
 
     public Order createOrder(CreateOrderRequest dto) {
         System.out.println("Pedido creado");
-        Order order = new Order(dto.getProduct(), dto.getPrice(), dto.getQuantity());
+        Order order = new Order(dto.getCustomerId(), dto.getProduct(), dto.getPrice(), dto.getQuantity());
         repository.save(order);
-        eventBus.publish("orders.created", new OrderCreatedEvent(order.getProduct(), order.getPrice()));
+        eventBus.publish("orders.created", 
+            new OrderCreatedEvent(
+                order.getProduct(), order.getPrice()
+            ),
+            order.getCustomerId()
+        );
 
         return order;
     }

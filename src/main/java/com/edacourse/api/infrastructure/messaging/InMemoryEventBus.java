@@ -17,6 +17,11 @@ public class InMemoryEventBus implements EventBus {
 
     @Override
     public void publish(String topic, Object event) {
+        publish(topic, event, "");
+    }
+
+    @Override
+    public void publish(String topic, Object event, String key) {
         String json = serializer.serialize(event);
 
         for (Consumer<String> subscriber : subscriptions.getOrDefault(topic, List.of())) {
