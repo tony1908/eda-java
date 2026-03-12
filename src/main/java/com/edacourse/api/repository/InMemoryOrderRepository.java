@@ -1,6 +1,7 @@
 package com.edacourse.api.repository;
 
 import com.edacourse.api.domain.Order;
+import com.edacourse.api.domain.Order.Status;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
@@ -24,5 +25,13 @@ public class InMemoryOrderRepository implements OrderRepository {
     @Override
     public List<Order> findAll() {
         return new ArrayList<>(orders.values());
+    }
+
+    @Override
+    public void updateStatus(String id, Status status, String reason) {
+        Order order = orders.get(id);
+        if (order != null) {
+            order.cancel(reason);
+        }
     }
 }

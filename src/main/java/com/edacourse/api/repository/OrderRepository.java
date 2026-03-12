@@ -1,6 +1,7 @@
 package com.edacourse.api.repository;
 
 import com.edacourse.api.domain.Order;
+import com.edacourse.api.domain.Order.Status;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,4 +9,5 @@ public interface OrderRepository {
     void save(Order order);
     Optional<Order> findById(String id);
     List<Order> findAll();
+    void updateStatus(String id, Status status, String reason);
 }
