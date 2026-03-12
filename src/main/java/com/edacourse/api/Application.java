@@ -15,6 +15,10 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import com.edacourse.api.service.InventoryService;
+import com.edacourse.api.service.PaymentService;
+import com.edacourse.api.service.NotificationService;
+import com.edacourse.api.subscriber.PaymentSubscriber;
+import com.edacourse.api.subscriber.NotificationSubscriber;
 
 import java.net.URI;
 
@@ -35,6 +39,12 @@ public class Application {
 
         new InventorySubcriber(eventBus, inventoryService);
         new SseBridgeSubscriber(eventBus, serializer, sseResource);
+
+        PaymentService paymentService = new PaymentService(eventBus);
+        NotificationService notificationService = new NotificationService();
+
+        new PaymentSubscriber(eventBus, paymentService);
+        new NotificationSubscriber(eventBus, notificationService);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
