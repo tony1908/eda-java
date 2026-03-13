@@ -10,8 +10,8 @@ public class NotificationSubscriber {
 
     public NotificationSubscriber(EventBus eventBus, NotificationService notificationService) {
         this.notificationService = notificationService;
-        eventBus.subscribe("inventory.reserved", InventoryReservedEvent.class, this::onInventoryReserved);
-        eventBus.subscribe("payment.completed", PaymentCompletedEvent.class, this::onPaymentCompleted);
+        eventBus.subscribe("inventory.reserved", InventoryReservedEvent.class, this::onInventoryReserved, "notification");
+        eventBus.subscribe("payment.completed", PaymentCompletedEvent.class, this::onPaymentCompleted, "notification");
     }
 
     private void onInventoryReserved(InventoryReservedEvent event) {

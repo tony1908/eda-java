@@ -61,9 +61,9 @@ public class RabbitMQEventBus implements EventBus {
             throw new RuntimeException("Error al publicar el evento", e);
         }
     }
-
+ 
     @Override
-    public <T> void subscribe(String topic, Class<T> eventType, EventHandler<T> handler) {
+    public <T> void subscribe(String topic, Class<T> eventType, EventHandler<T> handler, String consumerGroup) {
         try {
             channel.exchangeDeclare(topic, "fanout", true);
             String queue = channel.queueDeclare().getQueue();

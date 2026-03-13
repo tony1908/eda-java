@@ -30,7 +30,7 @@ public class InMemoryEventBus implements EventBus {
     }
 
     @Override
-    public <T> void subscribe(String topic, Class<T> eventType, EventHandler<T> handler) {
+    public <T> void subscribe(String topic, Class<T> eventType, EventHandler<T> handler, String consumerGroup) {
         subscriptions.computeIfAbsent(topic, k -> new CopyOnWriteArrayList<>())
                 .add(json -> {
                     T event = serializer.deserialize(json, eventType);

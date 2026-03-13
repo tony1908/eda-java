@@ -9,7 +9,7 @@ public class PaymentSubscriber {
 
     public PaymentSubscriber(EventBus eventBus, PaymentService paymentService) {
         this.paymentService = paymentService;
-        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated);
+        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated, "payment");
     }
 
     private void onOrderCreated(OrderCreatedEvent event) {

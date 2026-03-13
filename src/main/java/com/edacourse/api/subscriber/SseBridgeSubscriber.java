@@ -15,8 +15,8 @@ public class SseBridgeSubscriber {
         this.sseResource = sseResource;
         this.serializer = serializer;
         this.eventBus = eventBus;
-        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated);
-        eventBus.subscribe("orders.canceled", OrderCanceledEvent.class, this::onOrderCanceled);
+        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated, "sse");
+        eventBus.subscribe("orders.canceled", OrderCanceledEvent.class, this::onOrderCanceled, "sse");
     }
 
     private void onOrderCreated(OrderCreatedEvent event) {

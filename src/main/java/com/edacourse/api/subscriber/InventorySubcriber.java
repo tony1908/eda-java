@@ -11,8 +11,8 @@ public class InventorySubcriber {
 
     public InventorySubcriber(EventBus eventBus, InventoryService inventoryService) {
         this.inventoryService = inventoryService;
-        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated);
-        eventBus.subscribe("orders.canceled", OrderCanceledEvent.class, this::onOrderCanceled);
+        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated, "inventory");
+        eventBus.subscribe("orders.canceled", OrderCanceledEvent.class, this::onOrderCanceled, "inventory");
     }
 
     private void onOrderCreated(OrderCreatedEvent event) {
