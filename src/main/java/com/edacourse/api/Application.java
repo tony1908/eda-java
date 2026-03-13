@@ -1,8 +1,8 @@
 package com.edacourse.api;
 
 import com.edacourse.api.config.AppBinder;
-import com.edacourse.api.infrastructure.messaging.EventBus;
-import com.edacourse.api.infrastructure.messaging.KafkaEventBus;
+import com.edacourse.api.infrastructure.messaging.AdvancedEventBus;
+import com.edacourse.api.infrastructure.messaging.RabbitMQEventBus;
 import com.edacourse.api.infrastructure.messaging.EventSerializer;
 import com.edacourse.api.infrastructure.messaging.JsonEventSerializer;
 import com.edacourse.api.config.ObjectMapperProvider;
@@ -19,6 +19,7 @@ import com.edacourse.api.service.PaymentService;
 import com.edacourse.api.service.NotificationService;
 import com.edacourse.api.subscriber.PaymentSubscriber;
 import com.edacourse.api.subscriber.NotificationSubscriber;
+import com.edacourse.api.subscriber.DlqSubscriber;
 
 import java.net.URI;
 
@@ -27,7 +28,7 @@ public class Application {
 
     public static void main(String[] args) throws Exception {
         EventSerializer serializer = new JsonEventSerializer();
-        EventBus eventBus = new KafkaEventBus(serializer);
+        AdvancedEventBus eventBus = new RabbitMQEventBus(serializer);
         OrderSseResource sseResource = new OrderSseResource();
         InventoryService inventoryService = new InventoryService(eventBus);
 
@@ -45,6 +46,8 @@ public class Application {
 
         new PaymentSubscriber(eventBus, paymentService);
         new NotificationSubscriber(eventBus, notificationService);
+
+        new DlqSubscriber(eventBus);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 

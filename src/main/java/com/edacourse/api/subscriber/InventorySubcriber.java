@@ -1,6 +1,6 @@
 package com.edacourse.api.subscriber;
 
-import com.edacourse.api.infrastructure.messaging.EventBus;
+import com.edacourse.api.infrastructure.messaging.RoutableSubscriber;
 import com.edacourse.api.domain.event.OrderCreatedEvent;
 import com.edacourse.api.domain.event.OrderCanceledEvent;
 
@@ -9,10 +9,10 @@ import com.edacourse.api.service.InventoryService;
 public class InventorySubcriber {
     private final InventoryService inventoryService;
 
-    public InventorySubcriber(EventBus eventBus, InventoryService inventoryService) {
+    public InventorySubcriber(RoutableSubscriber eventBus, InventoryService inventoryService) {
         this.inventoryService = inventoryService;
-        eventBus.subscribe("orders.created", OrderCreatedEvent.class, this::onOrderCreated, "inventory");
-        eventBus.subscribe("orders.canceled", OrderCanceledEvent.class, this::onOrderCanceled, "inventory");
+        eventBus.subscribe("orders.created", "orders.created", OrderCreatedEvent.class, this::onOrderCreated);
+        eventBus.subscribe("orders.canceled", "orders.canceled", OrderCanceledEvent.class, this::onOrderCanceled);
     }
 
     private void onOrderCreated(OrderCreatedEvent event) {

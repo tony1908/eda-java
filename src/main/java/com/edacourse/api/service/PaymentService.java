@@ -1,12 +1,12 @@
 package com.edacourse.api.service;
 
-import com.edacourse.api.infrastructure.messaging.EventBus;
+import com.edacourse.api.infrastructure.messaging.RoutablePublisher;
 import com.edacourse.api.domain.event.PaymentCompletedEvent;
 
 public class PaymentService {
-    private final EventBus eventBus;
+    private final RoutablePublisher eventBus;
 
-    public PaymentService(EventBus eventBus) {
+    public PaymentService(RoutablePublisher eventBus) {
         this.eventBus = eventBus;
     }
 

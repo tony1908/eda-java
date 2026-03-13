@@ -5,8 +5,10 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
-public class RabbitMQEventBus implements EventBus {
+public class RabbitMQEventBus implements AdvancedEventBus, EventBus {
     private final Connection connection;
     private final Channel channel;
     private final EventSerializer serializer;
@@ -32,6 +34,10 @@ public class RabbitMQEventBus implements EventBus {
             try {
                 conn = factory.newConnection();
                 ch = conn.createChannel();
+
+                ch.confirmSelect();
+                ch.basicQos(1);
+
                 System.out.println("Conectado a RabbitMQ");
                 break;
             } catch (Exception e) {
@@ -52,11 +58,17 @@ public class RabbitMQEventBus implements EventBus {
     }
 
     @Override
-    public void publish(String topic, Object event, String key) {
+    public void publish(String topic, Object event, String partitionKey) {
+        publish(topic, partitionKey, event);
+    }
+
+    @Override
+    public void publish(String topic, String routingKey, Object event) {
         try {
-            channel.exchangeDeclare(topic, "fanout", true);
+            channel.exchangeDeclare(topic, "topic", true);
             String message = serializer.serialize(event);
-            channel.basicPublish(topic, "", null, message.getBytes());
+            System.out.println("Publicando evento: " + message + " en el topic: " + topic + " con routing key: " + routingKey);
+            channel.basicPublish(topic, routingKey, null, message.getBytes());
         } catch (Exception e) {
             throw new RuntimeException("Error al publicar el evento", e);
         }
@@ -64,17 +76,64 @@ public class RabbitMQEventBus implements EventBus {
  
     @Override
     public <T> void subscribe(String topic, Class<T> eventType, EventHandler<T> handler, String consumerGroup) {
-        try {
-            channel.exchangeDeclare(topic, "fanout", true);
-            String queue = channel.queueDeclare().getQueue();
-            channel.queueBind(queue, topic, "");
+        subscribe(topic, "#", eventType, handler);
+    }
 
-            channel.basicConsume(queue, true, (consumerTag, delivery) -> {
-                String json = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                T event = serializer.deserialize(json, eventType);
-                handler.handle(event);
+    @Override
+    public <T> void subscribe(String topic, String routingKeyOrPattern, Class<T> eventType, EventHandler<T> handler) {
+        try {
+            System.out.println("Subscribiendose al evento: " + topic + " con routing key: " + routingKeyOrPattern);
+            channel.exchangeDeclare(topic, "topic", true);
+            String dlxExchange = topic + ".dlx";
+            channel.exchangeDeclare(dlxExchange, "fanout", true);
+
+            Map<String, Object> queueArgs = new HashMap<>();
+            queueArgs.put("x-dead-letter-exchange", dlxExchange);
+            
+            String queue = channel.queueDeclare("", true, false, true, queueArgs).getQueue();
+
+            channel.queueBind(queue, topic, routingKeyOrPattern);
+
+            channel.basicConsume(queue, false, (consumerTag, delivery) -> {
+                try {
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    T event = serializer.deserialize(message, eventType);
+                    handler.handle(event);
+
+                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                } catch (Exception e) {
+                    channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, false);
+                }
+            }, consumerTag -> {});
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al suscribirse al evento", e);
+        }
+    }
+
+    @Override
+    public <T> void onDeadLetter(String topic, Class<T> eventType, EventHandler<T> handler) {
+        try {
+            String dlxExchange = topic + ".dlx";
+            String dlqName = topic + ".dlq";
+            
+            channel.exchangeDeclare(dlxExchange, "fanout", true);
+            channel.queueDeclare(dlqName, true, false, false, null);
+            channel.queueBind(dlqName, dlxExchange, "#");
+
+            channel.basicConsume(dlqName, false, (consumerTag, delivery) -> {
+                try {
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    T event = serializer.deserialize(message, eventType);
+                    handler.handle(event);
+
+                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                } catch (Exception e) {
+                    channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, false);
+                }
             }, consumerTag -> {});
             
+
         } catch (Exception e) {
             throw new RuntimeException("Error al suscribirse al evento", e);
         }
