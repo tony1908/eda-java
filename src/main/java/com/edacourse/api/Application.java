@@ -30,6 +30,14 @@ import com.edacourse.api.shipping.infrastructure.subscriber.ShippingSubscriber;
 import com.edacourse.api.notification.application.service.NotificationService;
 import com.edacourse.api.notification.infrastructure.subscriber.NotificationSubscriber;
 
+import com.edacourse.api.catalog.domain.repository.ProductRepository;
+import com.edacourse.api.catalog.infrastructure.persistence.InMemoryProductRepository;
+import com.edacourse.api.catalog.application.service.CatalogService;
+import com.edacourse.api.catalog.interfaces.rest.CatalogResource;
+
+import com.edacourse.api.search.application.service.SearchService;
+import com.edacourse.api.search.infrastructure.subscriber.SearchSubscriber;
+
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -67,6 +75,14 @@ public class Application {
         NotificationService notificationService = new NotificationService();
         new NotificationSubscriber(eventBus, notificationService);
 
+        // Catalog context
+        ProductRepository productRepo = new InMemoryProductRepository();
+        CatalogService catalogService = new CatalogService(productRepo);
+
+        // Search context
+        SearchService searchService = new SearchService();
+        new SearchSubscriber(eventBus, searchService);
+
         // SSE bridge
         new SseBridgeSubscriber(eventBus, serializer, sseResource);
 
@@ -78,17 +94,19 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService))
                 .register(JacksonFeature.class)
                 .register(ObjectMapperProvider.class)
-                .register(OrderResource.class);
+                .register(OrderResource.class)
+                .register(CatalogResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
         System.out.println("=== EventFlow Platform iniciada ===");
         System.out.println("Broker: " + eventBus.getClass().getSimpleName());
-        System.out.println("Contextos: Order, Inventory, Payment, Shipping, Notification");
+        System.out.println("Contextos: Order, Inventory, Payment, Shipping, Notification, Catalog, Search");
         System.out.println("REST: " + BASE_URI + "api/orders");
+        System.out.println("REST: " + BASE_URI + "api/products");
         System.out.println("SSE:  " + BASE_URI + "api/orders/events");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
