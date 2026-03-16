@@ -9,8 +9,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>EventFlow — SOLID Principles</name>
-    <description>Módulo 1, Clase 1: Principios SOLID y Dependency Inversion</description>
+    <name>EventFlow Platform</name>
+    <description>Plataforma e-commerce event-driven con Clean Architecture y DDD</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
