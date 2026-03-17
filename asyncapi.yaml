@@ -1,0 +1,145 @@
+asyncapi: 3.0.0
+
+info:
+  title: Eventflow arquitectura orientada a eventos
+  version: 1.0.0
+  description: Arquitectura orientada a eventos para la gestion de pedidos
+  contact:
+    name: Tony
+    email: tony@gmail.com
+
+  license:
+    name: MIT
+
+defaultContentType: application/json
+
+servers:
+  rabbitmq-dev:
+    host: rabbitmq:5672
+    protocol: amqp
+    description: RabbitMQ server en dev
+    security:
+      - $ref: '#/components/schemas/securitySchemes/rabbitmqCredentials'
+    tags:
+      - name: development
+
+  kafka-dev:
+    host: kafka:9092
+    protocol: kafka
+    description: Kafka server en dev
+    tags:
+      - name: development
+
+channels: 
+  orders.created:
+    address: orders.created
+    description: Evento de creacion de pedido
+    messages:
+      orderCreatedEvent:
+        $ref: '#/components/messages/orderCreatedEvent'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: 
+          name: eventflow
+          type: topic
+          durable: true
+  
+  orders.canceled:
+    address: orders.canceled
+    description: Evento de cancelacion de pedido
+    messages:
+      orderCanceledEvent:
+        $ref: '#/components/messages/orderCanceledEvent'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: 
+          name: eventflow
+          type: topic
+          durable: true
+        
+operations:
+  publishOrderCreated:
+    action: send
+    channel:
+      $ref: '#/channels/orders.created'
+    description: Publica un evento de creacion de pedido
+    tags:
+      - name: orders
+
+  publishOrderCanceled:
+    action: send
+    channel:
+      $ref: '#/channels/orders.canceled'
+    description: Publica un evento de cancelacion de pedido
+    tags:
+      - name: orders
+  
+  onOrderCreatedInventory:
+    action: receive
+    channel:
+      $ref: '#/channels/orders.created'
+    description: Recibe un evento de creacion de pedido
+    tags:
+      - name: inventory
+    
+
+  onOrderCanceledInventory:
+    action: receive
+    channel:
+      $ref: '#/channels/orders.canceled'
+    description: Recibe un evento de cancelacion de pedido
+    tags:
+      - name: inventory
+        
+components:
+  messages:
+    orderCreatedEvent:
+      name: orderCreatedEvent
+      title: Evento de creacion de pedido
+      description: Evento de creacion de pedido
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderCreatedPayload'
+      examples:
+        - name: laptopOrder
+          summary: Evento de creacion de pedido de laptop
+          payload:
+            product: "laptop"
+            price: 999.99
+
+    orderCanceledEvent:
+      name: orderCanceledEvent
+      title: Evento de cancelacion de pedido
+      description: Evento de cancelacion de pedido
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderCanceledPayload'
+      examples:
+        - name: laptopOrderCanceled
+          summary: Evento de cancelacion de pedido de laptop
+          payload:
+            id: "uudhf"
+            reason: "Pedido cancelado"
+  schemas:
+    OrderCreatedPayload:
+      type: object
+      properties:
+        product:
+          type: string
+        price:
+          type: number
+    OrderCanceledPayload:
+      type: object
+      properties:
+        id:
+          type: string
+        reason:
+          type: string
+    securitySchemes:
+      rabbitmqCredentials:
+        type: userPassword
+        description: Credenciales de RabbitMQ
+        
+    

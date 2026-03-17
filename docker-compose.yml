@@ -1,75 +1,47 @@
 version: "3.9"
 
 services:
-  app:
-    image: eventflow
-    container_name: eventflow-app
-    ports:
-      - "8090:8080"
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=user
-      - RABBITMQ_PASSWORD=password
-    depends_on:
-      kafka:
-        condition: service_healthy 
-      rabbitmq:
-        condition: service_healthy
-  
-  kafka:
-    image: apache/kafka:3.9.0
-    container_name: eventflow-kafka
-    environment:
-      # KRaft mode (no Zookeeper)
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-
-      # Listeners
-      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-
-      # Cluster
-      CLUSTER_ID: "eventflow-kafka-cluster-001"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-
-      # Log retention
-      KAFKA_LOG_RETENTION_HOURS: 168
-      KAFKA_LOG_SEGMENT_BYTES: 1073741824
-    healthcheck:
-      test: /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
-      interval: 10s
-      timeout: 5s
-      retries: 5 
-  
-  rabbitmq:
-    image: rabbitmq:4.1-management
-    container_name: eventflow-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+  asyncapi-docs:
+    image: asyncapi/cli:6.0.0
+    container_name: eventflow-asyncapi-docs
     volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 20s
-
-
-volumes:
-  rabbitmq-data:
+      - .:/app
+    working_dir: /app
+    command: generate fromTemplate asyncapi.yaml @asyncapi/html-template -o docs --force-write
+    profiles:
+      - docs
   
+  asyncapi-validate:
+    image: asyncapi/cli:6.0.0
+    container_name: eventflow-asyncapi-validate
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: validate asyncapi.yaml
+    profiles:
+      - validate
+
+  asyncapi-code-generator:
+    image: asyncapi/cli:6.0.0
+    container_name: eventflow-asyncapi-code-generator
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: generate models java asyncapi.yaml --packageName com.eventflow.events --output generated-java
+    profiles:
+      - code-generator
+    
+
+  asyncapi-studio:
+    image: asyncapi/studio:latest
+    container_name: eventflow-asyncapi-studio
+    ports:
+      - "3210:80"
+    volumes:
+      - .:/app
+    profiles:
+      - studio  
+    
+    
     
   
