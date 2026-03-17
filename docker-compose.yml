@@ -12,12 +12,18 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=user
       - RABBITMQ_PASSWORD=password
+      - SQLSERVER_URL=jdbc:sqlserver://sqlserver:1433;databaseName=eventflow;encrypt=false
+      - SQLSERVER_USER=sa
+      - SQLSERVER_PASSWORD=EventFlow123!
+      - CDC_STRATEGY=polling
     depends_on:
       kafka:
-        condition: service_healthy 
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
-  
+      sqlserver:
+        condition: service_healthy
+
   kafka:
     image: apache/kafka:3.9.0
     container_name: eventflow-kafka
@@ -47,8 +53,8 @@ services:
       test: /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
       interval: 10s
       timeout: 5s
-      retries: 5 
-  
+      retries: 5
+
   rabbitmq:
     image: rabbitmq:4.1-management
     container_name: eventflow-rabbitmq
@@ -67,9 +73,26 @@ services:
       retries: 10
       start_period: 20s
 
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: eventflow-sqlserver
+    environment:
+      SA_PASSWORD: "EventFlow123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./src/main/resources/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - sqlserver-data:/var/lib/mssql/data
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "EventFlow123!" -Q "SELECT 1" -b -C
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
 
 volumes:
   rabbitmq-data:
-  
-    
-  
+  sqlserver-data:

@@ -31,7 +31,7 @@ import com.edacourse.api.notification.application.service.NotificationService;
 import com.edacourse.api.notification.infrastructure.subscriber.NotificationSubscriber;
 
 import com.edacourse.api.catalog.domain.repository.ProductRepository;
-import com.edacourse.api.catalog.infrastructure.persistence.InMemoryProductRepository;
+import com.edacourse.api.catalog.infrastructure.persistence.SqlServerProductRepository;
 import com.edacourse.api.catalog.application.service.CatalogService;
 import com.edacourse.api.catalog.interfaces.rest.CatalogResource;
 
@@ -76,12 +76,16 @@ public class Application {
         new NotificationSubscriber(eventBus, notificationService);
 
         // Catalog context
-        ProductRepository productRepo = new InMemoryProductRepository();
+        ProductRepository productRepo = new SqlServerProductRepository();
         CatalogService catalogService = new CatalogService(productRepo);
 
         // Search context
         SearchService searchService = new SearchService();
         new SearchSubscriber(eventBus, searchService);
+
+        // CDC
+        CdcStrategy cdcStrategy = new  NativeCdcStrategy(eventBus, serializer);
+        cdcStrategy.start();
 
         // SSE bridge
         new SseBridgeSubscriber(eventBus, serializer, sseResource);
