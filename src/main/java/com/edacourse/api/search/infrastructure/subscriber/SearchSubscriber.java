@@ -12,7 +12,7 @@ public class SearchSubscriber {
 
     public SearchSubscriber(EventBus eventBus, SearchService searchService) {
         this.searchService = searchService;
-        eventBus.subscribe("catalog.product-changed", ProductChangedData.class,
+        eventBus.subscribe("products.changed", ProductChangedData.class,
             this::onProductChanged, "search");
     }
 

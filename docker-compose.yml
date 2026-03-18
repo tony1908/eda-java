@@ -15,14 +15,25 @@ services:
       - SQLSERVER_URL=jdbc:sqlserver://sqlserver:1433;databaseName=eventflow;encrypt=false
       - SQLSERVER_USER=sa
       - SQLSERVER_PASSWORD=EventFlow123!
-      - CDC_STRATEGY=polling
+      - CDC_STRATEGY=native
+      - BROKER=rabbitmq
     depends_on:
       kafka:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      sqlserver-init:
+        condition: service_completed_successfully
+
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: eventflow-sqlserver-init
+    depends_on:
       sqlserver:
         condition: service_healthy
+    volumes:
+      - ./src/main/resources/sql/init.sql:/init.sql
+    entrypoint: ["/opt/mssql-tools18/bin/sqlcmd", "-S", "sqlserver", "-U", "sa", "-P", "EventFlow123!", "-i", "/init.sql", "-C"]
 
   kafka:
     image: apache/kafka:3.9.0
@@ -80,11 +91,11 @@ services:
       SA_PASSWORD: "EventFlow123!"
       ACCEPT_EULA: "Y"
       MSSQL_PID: "Developer"
+      MSSQL_AGENT_ENABLED: "true"
     ports:
       - "1433:1433"
     volumes:
-      - ./src/main/resources/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - sqlserver-data:/var/lib/mssql/data
+      - sqlserver-data:/var/opt/mssql
     healthcheck:
       test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "EventFlow123!" -Q "SELECT 1" -b -C
       interval: 10s

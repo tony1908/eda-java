@@ -1,5 +1,18 @@
 package com.edacourse.api.catalog.infrastructure.cdc;
 
+import com.edacourse.api.shared.infrastructure.messaging.EventBus;
+import com.edacourse.api.catalog.domain.event.ProductChangedEvent;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 public class PollingCdcStrategy implements CdcStrategy {
     private final String jdbcUrl;
     private final String user;
