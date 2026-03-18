@@ -48,8 +48,8 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import com.edacourse.api.catalog.infrastructure.cdc.TriggerOutboxStrategy;
 
-import com.edacourse.api.search.infrastructure.opensearch.OpenSearchRepository;
-import com.edacourse.api.search.infrastructure.opensearch.SearchRepository;
+import com.edacourse.api.search.domain.repository.ProductSearchRepository;
+import com.edacourse.api.search.infrastructure.opensearch.OpenSearchProductSearchRepository;
 import com.edacourse.api.search.infrastructure.opensearch.EmbeddingGenerator;
 import com.edacourse.api.search.infrastructure.opensearch.TrigramEmbeddingGenerator;
 
@@ -96,14 +96,11 @@ public class Application {
         ProductRepository productRepo = new SqlServerProductRepository(sqlUrl, sqlUser, sqlPass);
         CatalogService catalogService = new CatalogService(productRepo);
 
-        // OpenSearch
-        SearchRepository searchRepository = new OpenSearchRepository();
-        EmbeddingGenerator embeddingGenerator = new TrigramEmbeddingGenerator();
-        
-
         // Search context
-        SearchService searchService = new SearchService(searchRepository, embeddingGenerator, "products");
-        searchRepository.createIndexIfNotExist("products");
+        String openSearchUrl = System.getenv().getOrDefault("OPENSEARCH_URL", "http://opensearch:9200");
+        EmbeddingGenerator embeddingGenerator = new TrigramEmbeddingGenerator();
+        ProductSearchRepository productSearchRepository = new OpenSearchProductSearchRepository(openSearchUrl, "products", embeddingGenerator);
+        SearchService searchService = new SearchService(productSearchRepository);
         new SearchSubscriber(eventBus, searchService);
 
         // CDC
