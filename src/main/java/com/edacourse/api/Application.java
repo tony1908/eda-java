@@ -48,6 +48,13 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import com.edacourse.api.catalog.infrastructure.cdc.TriggerOutboxStrategy;
 
+import com.edacourse.api.search.infrastructure.opensearch.OpenSearchRepository;
+import com.edacourse.api.search.infrastructure.opensearch.SearchRepository;
+import com.edacourse.api.search.infrastructure.opensearch.EmbeddingGenerator;
+import com.edacourse.api.search.infrastructure.opensearch.TrigramEmbeddingGenerator;
+
+import com.edacourse.api.search.interfaces.rest.SearchResource;
+
 import java.net.URI;
 
 public class Application {
@@ -89,12 +96,18 @@ public class Application {
         ProductRepository productRepo = new SqlServerProductRepository(sqlUrl, sqlUser, sqlPass);
         CatalogService catalogService = new CatalogService(productRepo);
 
+        // OpenSearch
+        SearchRepository searchRepository = new OpenSearchRepository();
+        EmbeddingGenerator embeddingGenerator = new TrigramEmbeddingGenerator();
+        
+
         // Search context
-        SearchService searchService = new SearchService();
+        SearchService searchService = new SearchService(searchRepository, embeddingGenerator, "products");
+        searchRepository.createIndexIfNotExist("products");
         new SearchSubscriber(eventBus, searchService);
 
         // CDC
-        CdcStrategy cdcStrategy = new TriggerOutboxStrategy(sqlUrl, sqlUser, sqlPass);
+        CdcStrategy cdcStrategy = new PollingCdcStrategy(sqlUrl, sqlUser, sqlPass);
         cdcStrategy.start(eventBus, "products.changed");
 
         // SSE bridge
@@ -108,11 +121,12 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService))
                 .register(JacksonFeature.class)
                 .register(ObjectMapperProvider.class)
                 .register(OrderResource.class)
-                .register(CatalogResource.class);
+                .register(CatalogResource.class)
+                .register(SearchResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
@@ -122,6 +136,7 @@ public class Application {
         System.out.println("REST: " + BASE_URI + "api/orders");
         System.out.println("REST: " + BASE_URI + "api/products");
         System.out.println("SSE:  " + BASE_URI + "api/orders/events");
+        System.out.println("REST: " + BASE_URI + "api/search");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Apagando EventFlow...");

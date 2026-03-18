@@ -17,6 +17,7 @@ services:
       - SQLSERVER_PASSWORD=EventFlow123!
       - CDC_STRATEGY=native
       - BROKER=rabbitmq
+      - OPENSEARCH_URL=http://opensearch:9200
     depends_on:
       kafka:
         condition: service_healthy
@@ -24,6 +25,8 @@ services:
         condition: service_healthy
       sqlserver-init:
         condition: service_completed_successfully
+      opensearch:
+        condition: service_healthy
 
   sqlserver-init:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -102,8 +105,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+  
+  opensearch:
+    image: opensearchproject/opensearch:2.19.0
+    container_name: eventflow-opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=EventFlow123!
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 
 volumes:
   rabbitmq-data:
   sqlserver-data:
+  opensearch-data:

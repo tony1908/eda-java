@@ -8,6 +8,7 @@ import com.edacourse.api.order.infrastructure.persistence.InMemoryOrderRepositor
 import com.edacourse.api.order.application.service.OrderService;
 import com.edacourse.api.order.interfaces.sse.OrderSseResource;
 import com.edacourse.api.catalog.application.service.CatalogService;
+import com.edacourse.api.search.application.service.SearchService;
 import jakarta.inject.Singleton;
 
 public class AppBinder extends AbstractBinder {
@@ -15,12 +16,14 @@ public class AppBinder extends AbstractBinder {
     private final EventBus eventBus;
     private final OrderSseResource sseResource;
     private final CatalogService catalogService;
+    private final SearchService searchService;
 
-    public AppBinder(EventSerializer serializer, EventBus eventBus, OrderSseResource sseResource, CatalogService catalogService) {
+    public AppBinder(EventSerializer serializer, EventBus eventBus, OrderSseResource sseResource, CatalogService catalogService, SearchService searchService) {
         this.serializer = serializer;
         this.eventBus = eventBus;
         this.sseResource = sseResource;
         this.catalogService = catalogService;
+        this.searchService = searchService;
     }
 
     @Override
@@ -32,5 +35,7 @@ public class AppBinder extends AbstractBinder {
         bind(OrderService.class).to(OrderService.class).in(Singleton.class);
         bind(sseResource).to(OrderSseResource.class).in(Singleton.class);
         bind(catalogService).to(CatalogService.class);
+
+        bind(searchService).to(SearchService.class);
     }
 }
