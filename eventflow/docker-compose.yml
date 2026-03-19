@@ -1,0 +1,132 @@
+version: "3.9"
+
+services:
+  app:
+    image: eventflow
+    container_name: eventflow-app
+    ports:
+      - "8090:8080"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=user
+      - RABBITMQ_PASSWORD=password
+      - SQLSERVER_URL=jdbc:sqlserver://sqlserver:1433;databaseName=eventflow;encrypt=false
+      - SQLSERVER_USER=sa
+      - SQLSERVER_PASSWORD=EventFlow123!
+      - CDC_STRATEGY=native
+      - BROKER=rabbitmq
+      - OPENSEARCH_URL=http://opensearch:9200
+    depends_on:
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      sqlserver-init:
+        condition: service_completed_successfully
+      opensearch:
+        condition: service_healthy
+
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: eventflow-sqlserver-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./src/main/resources/sql/init.sql:/init.sql
+    entrypoint: ["/opt/mssql-tools18/bin/sqlcmd", "-S", "sqlserver", "-U", "sa", "-P", "EventFlow123!", "-i", "/init.sql", "-C"]
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: eventflow-kafka
+    environment:
+      # KRaft mode (no Zookeeper)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Cluster
+      CLUSTER_ID: "eventflow-kafka-cluster-001"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      # Log retention
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+    healthcheck:
+      test: /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: eventflow-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: eventflow-sqlserver
+    environment:
+      SA_PASSWORD: "EventFlow123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_AGENT_ENABLED: "true"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "EventFlow123!" -Q "SELECT 1" -b -C
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+  
+  opensearch:
+    image: opensearchproject/opensearch:2.19.0
+    container_name: eventflow-opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=EventFlow123!
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+volumes:
+  rabbitmq-data:
+  sqlserver-data:
+  opensearch-data:
