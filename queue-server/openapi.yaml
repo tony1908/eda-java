@@ -1,0 +1,383 @@
+openapi: 3.0.1
+info:
+  title: Queue server
+  version: 1.0.0
+servers:
+  - url: /
+security:
+  - default: []
+paths:
+  /api/channels:
+    post:
+      tags:
+        - Channels
+      summary: Create a new channel
+      operationId: createChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChannelRequest'
+      responses:
+        '201':
+          description: Channel created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelResponse'
+        '500':
+          description: Internal server error
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+    get:
+      tags:
+        - Channels
+      summary: List all channels
+      operationId: listChannels
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelResponse'
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /api/channels/{name}:
+    get:
+      tags:
+        - Channels
+      summary: Get a channel by name
+      operationId: getChannel
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelResponse'
+        '404':
+          description: Channel not found
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /api/channels/{name}/publish:
+    post:
+      tags:
+        - Publishing
+      summary: Publish a message to a channel
+      operationId: publish
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '201':
+          description: Message published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Payload is required
+        '404':
+          description: Channel not found
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /api/channels/{name}/history:
+    get:
+      tags:
+        - Publishing
+      summary: Get message history for a channel
+      operationId: getHistory
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Channel not found
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /api/subscriptions/channels/{name}:
+    post:
+      tags:
+        - Subscriptions
+      summary: Subscribe a webhook to a channel
+      operationId: subscribe
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          description: webhook_url is required
+        '404':
+          description: Channel not found
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /api/subscriptions/channels/{name}/subscribers:
+    get:
+      tags:
+        - Subscriptions
+      summary: List all subscribers for a channel
+      operationId: listSubscribers
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          description: Channel not found
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+  /api/subscriptions/{id}:
+    delete:
+      tags:
+        - Subscriptions
+      summary: Unsubscribe from a channel
+      operationId: unsubscribe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Subscription not found
+      security:
+        - default: []
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+      x-wso2-application-security:
+        security-types:
+          - oauth2
+        optional: false
+components:
+  schemas:
+    CreateChannelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    ChannelResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        subscriber_count:
+          type: integer
+    PublishRequest:
+      type: object
+      required:
+        - payload
+      properties:
+        payload:
+          type: string
+        publisher_id:
+          type: string
+    MessageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        channel_id:
+          type: string
+        payload:
+          type: string
+        publisher_id:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+    SubscribeRequest:
+      type: object
+      required:
+        - webhook_url
+      properties:
+        webhook_url:
+          type: string
+        description:
+          type: string
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        channelId:
+          type: string
+        webhookUrl:
+          type: string
+        description:
+          type: string
+        active:
+          type: boolean
+        secret:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+  securitySchemes:
+    default:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: 'https://test.com'
+          scopes: {}
+x-wso2-auth-header: Authorization
+x-wso2-api-key-header: ApiKey
+x-wso2-cors:
+  corsConfigurationEnabled: false
+  accessControlAllowOrigins:
+    - '*'
+  accessControlAllowCredentials: false
+  accessControlAllowHeaders:
+    - authorization
+    - Access-Control-Allow-Origin
+    - Content-Type
+    - SOAPAction
+    - apikey
+    - Internal-Key
+  accessControlAllowMethods:
+    - GET
+    - PUT
+    - POST
+    - DELETE
+    - PATCH
+    - OPTIONS
+x-wso2-production-endpoints:
+  urls:
+    - 'http://app:8080'
+  type: http
+x-wso2-sandbox-endpoints:
+  urls:
+    - 'http://app:8080'
+  type: http
+x-wso2-basePath: /pubsub/1.0.0
+x-wso2-transports:
+  - http
+  - https
+x-wso2-application-security:
+  security-types:
+    - oauth2
+  optional: false
+x-wso2-response-cache:
+  enabled: false
+  cacheTimeoutInSeconds: 300

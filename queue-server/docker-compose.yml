@@ -4,8 +4,6 @@ services:
   app:
     image: queue-server
     container_name: queue-server-app
-    ports:
-      - "8091:8080"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - DB_URL=jdbc:sqlserver://sqlserver:1433;databaseName=pubsub;encrypt=false
@@ -17,6 +15,8 @@ services:
         condition: service_healthy
       sqlserver-init:
         condition: service_completed_successfully
+      wso2am:
+        condition: service_healthy
 
   sqlserver-init:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -77,6 +77,25 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+  
+  wso2am:
+    image: wso2/wso2am:4.6.0
+    container_name: queue-server-wso2am
+    ports:
+      - "9443:9443"    # Publisher + DevPortal (HTTPS)
+      - "8280:8280"    # Gateway HTTP (sandbox)
+      - "8243:8243"    # Gateway HTTPS (produccion)
+    environment:
+      - JAVA_OPTS=-Xms512m -Xmx1024m
+    volumes:
+      - wso2am-data:/home/wso2carbon/wso2am-4.6.0/repository
+    healthcheck:
+      test: curl -k -s https://localhost:9443/services/Version || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
 
 volumes:
   sqlserver-data:
+  wso2am-data:
