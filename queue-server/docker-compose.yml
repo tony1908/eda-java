@@ -11,6 +11,7 @@ services:
       - DB_URL=jdbc:sqlserver://sqlserver:1433;databaseName=pubsub;encrypt=false
       - DB_USER=sa
       - DB_PASSWORD=EventFlow123!
+      - WEBHOOK_SECRET=27645cb1ad9d43de8b63a7498f4808a0
     depends_on:
       kafka:
         condition: service_healthy

@@ -93,7 +93,7 @@ public class WebhookDispatcher implements AutoCloseable {
     }
 
     private void dispatchToSubscribers(String channelName, String payload, String messageId){
-        Channel channel = channelRepo.findByName(channelName);
+        Channel channel = channelRepo.findByName(channelName).orElse(null);
         if (channel == null) {
             System.out.println("[DISPATCHER] Canal '" + channelName + "' no encontrado");
             return;

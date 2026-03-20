@@ -48,7 +48,7 @@ public class Application {
 
         HmacSigner hmacSigner = new HmacSignerService();
 
-        WebhookDispatcher webhookDispatcher = new WebhookDispatcher(subscriptionRepository, deliveryRespository, hmacSigner);
+        WebhookDispatcher webhookDispatcher = new WebhookDispatcher(subscriptionRepository, deliveryRespository, hmacSigner, channelRepository);
 
         webhookDispatcher.start();
 
