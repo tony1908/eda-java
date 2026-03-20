@@ -9,5 +9,6 @@ public interface SubscriptionRepository {
     Subscription save(Subscription subscription);
     Optional<Subscription> findById(String id);
     List<Subscription> findByChannelId(String channelId);
+    List<Subscription> findActiveByChannelName(String channelName);
     void deactivate(String id);
 }

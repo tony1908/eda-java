@@ -37,3 +37,19 @@ CREATE TABLE messages (
     FOREIGN KEY (channel_id) REFERENCES channels(id)
 );
 GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'delivery_log')
+CREATE TABLE delivery_log (
+    id VARCHAR(36) PRIMARY KEY DEFAULT NEWID(),
+    message_id VARCHAR(36) NOT NULL,
+    subscription_id VARCHAR(36) NOT NULL,
+    channel_name NVARCHAR(100) NOT NULL,
+    webhook_url NVARCHAR(500) NOT NULL,
+    status VARCHAR(20) NOT NULL,        -- DELIVERED, FAILED, RETRYING
+    http_status INT,
+    attempt INT DEFAULT 1,
+    error_message NVARCHAR(1000),
+    delivered_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+);
+GO
