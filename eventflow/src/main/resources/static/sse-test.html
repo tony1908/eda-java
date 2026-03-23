@@ -18,6 +18,40 @@
         const statusDiv = document.getElementById('status');
         const counterDiv = document.getElementById('counter');
 
+        const EVENT_LIST = [
+            "order.created",
+            "order.canceled",
+            "order.paid",
+            "order.shipped",
+            "order.delivered",
+            "order.returned",
+            "order.refunded",
+            "order.updated",
+            "order.deleted",
+            "order.restored",
+            "order.restored",
+        ]
+
+        function eventHandler(eventType, event) {
+            console.log(eventType, event);
+            count++;
+            counterDiv.textContent = 'Eventos recibidos: ' + count;
+
+            const parsed = JSON.parse(event.data);
+            const topic = parsed.topic || 'unknown';
+            const data = JSON.stringify(parsed.data, null, 2);
+
+            const topicClass = topic.split('.')[0] || topic;
+            const div = document.createElement('div');
+            div.className = 'event ' + topicClass;
+            div.innerHTML = `
+                    <span class="time">${new Date().toLocaleTimeString()} | ID: ${event.lastEventId}</span>
+                    <br><span class="type">${eventType}</span> <span class="topic">[${topic}]</span>
+                    <div class="data">${data}</div>
+                `;
+            eventsDiv.insertBefore(div, eventsDiv.firstChild);
+        }
+
         function connect() {
             const source = new EventSource("/api/events/stream");
 
@@ -31,24 +65,8 @@
                 statusDiv.textContent = "Desconectado";
             }
 
-            source.addEventListener("order.created", (event) => {
-                console.log("Order created: ", event.data);
-                count++;
-                counterDiv.textContent = 'Eventos recibidos: ' + count;
-
-                const parsed = JSON.parse(event.data);
-                const topic = parsed.topic || 'unknown';
-                const data = JSON.stringify(parsed.data, null, 2);
-
-                const topicClass = topic.split('.')[0] || topic;
-                const div = document.createElement('div');
-                div.className = 'event ' + topicClass;
-                div.innerHTML = `
-                    <span class="time">${new Date().toLocaleTimeString()} | ID: ${event.lastEventId}</span>
-                    <br><span class="type">${"order.created"}</span> <span class="topic">[${topic}]</span>
-                    <div class="data">${data}</div>
-                `;
-                eventsDiv.insertBefore(div, eventsDiv.firstChild);
+            EVENT_LIST.forEach(eventType => {
+                source.addEventListener(eventType, (event) => eventHandler(eventType, event));
             });
         }
 
