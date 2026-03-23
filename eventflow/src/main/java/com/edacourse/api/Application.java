@@ -55,6 +55,11 @@ import com.edacourse.api.search.infrastructure.opensearch.TrigramEmbeddingGenera
 
 import com.edacourse.api.search.interfaces.rest.SearchResource;
 
+import com.edacourse.api.shared.infrastructure.sse.EventSseBroadcaster;
+import com.edacourse.api.shared.infrastructure.interfaces.sse.SseEventBridge;
+import com.edacourse.api.shared.infrastructure.interfaces.sse.EventSseResource;
+import com.edacourse.api.shared.infrastructure.interfaces.rest.StaticFileResource;
+
 import java.net.URI;
 
 public class Application {
@@ -110,6 +115,10 @@ public class Application {
         // SSE bridge
         new SseBridgeSubscriber(eventBus, serializer, sseResource);
 
+        // SSE broadcaster
+        EventSseBroadcaster sseBroadcaster = new EventSseBroadcaster();
+        new SseEventBridge(eventBus, sseBroadcaster, serializer);
+
         // DLQ handler (if broker supports it)
         if (eventBus instanceof DeadLetterHandler dlh) {
             dlh.onDeadLetter("orders.created", String.class, event ->
@@ -118,12 +127,14 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster))
                 .register(JacksonFeature.class)
                 .register(ObjectMapperProvider.class)
                 .register(OrderResource.class)
                 .register(CatalogResource.class)
-                .register(SearchResource.class);
+                .register(SearchResource.class)
+                .register(StaticFileResource.class)
+                .register(EventSseResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 

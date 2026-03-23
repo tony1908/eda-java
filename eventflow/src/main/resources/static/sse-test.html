@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>EventFlow — SSE Monitor</h1>
+    <div id="status" class="status disconnected">Desconectado</div>
+    <div id="counter" class="counter">Eventos recibidos: 0</div>
+    <div id="events" class="events"></div>
+    <script>
+        let count = 0;
+        const eventsDiv = document.getElementById('events');
+        const statusDiv = document.getElementById('status');
+        const counterDiv = document.getElementById('counter');
+
+        function connect() {
+            const source = new EventSource("/api/events/stream");
+
+            source.onopen = () => {
+                console.log("Connected to SSE");
+                statusDiv.textContent = "Conectado";
+            }
+
+            source.onerror = (error) => {
+                console.log("Error: ", error);
+                statusDiv.textContent = "Desconectado";
+            }
+
+            source.addEventListener("order.created", (event) => {
+                console.log("Order created: ", event.data);
+                count++;
+                counterDiv.textContent = 'Eventos recibidos: ' + count;
+
+                const parsed = JSON.parse(event.data);
+                const topic = parsed.topic || 'unknown';
+                const data = JSON.stringify(parsed.data, null, 2);
+
+                const topicClass = topic.split('.')[0] || topic;
+                const div = document.createElement('div');
+                div.className = 'event ' + topicClass;
+                div.innerHTML = `
+                    <span class="time">${new Date().toLocaleTimeString()} | ID: ${event.lastEventId}</span>
+                    <br><span class="type">${"order.created"}</span> <span class="topic">[${topic}]</span>
+                    <div class="data">${data}</div>
+                `;
+                eventsDiv.insertBefore(div, eventsDiv.firstChild);
+            });
+        }
+
+        connect();
+
+    </script>
+</body>
+
+</html>
