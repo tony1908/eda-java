@@ -1,20 +1,16 @@
 import OrderDashboard from './components/OrderDashboard'
 import InventoryPanel from './components/InventoryPanel'
 
-// TODO: Importar el hook useSSE desde './hooks/useSSE'
+import useSSE from './hooks/useSSE'
 
-// TODO: Definir los tipos de evento para cada panel
-// const ORDER_EVENTS = ['order.created', 'order.canceled', 'payment.completed', 'payment.failed', 'shipping.shipped']
-// const INVENTORY_EVENTS = ['inventory.reserved', 'inventory.insufficient', 'stock.low']
+const ORDER_EVENTS = ['order.created', 'order.canceled', 'payment.completed', 'payment.failed', 'shipping.shipped']
+const INVENTORY_EVENTS = ['inventory.reserved', 'inventory.insufficient', 'stock.low']
 
 export default function App() {
-  // TODO: Reemplazar estos arrays vacios con el hook useSSE
-  // const orders = useSSE('/api/events/stream', ORDER_EVENTS)
-  // const inventory = useSSE('/api/events/stream', INVENTORY_EVENTS)
-  const orderEvents = []
-  const inventoryEvents = []
-  const totalEvents = orderEvents.length + inventoryEvents.length
-  const isConnected = false
+  const orders = useSSE('/api/events/stream', ORDER_EVENTS)
+  const inventory = useSSE('/api/events/stream', INVENTORY_EVENTS)
+  const totalEvents = orders.events.length + inventory.events.length
+  const isConnected = orders.isConnected && inventory.isConnected
 
   return (
     <div className="app">
@@ -28,8 +24,8 @@ export default function App() {
         </div>
       </header>
       <main className="panels">
-        <OrderDashboard events={orderEvents} />
-        <InventoryPanel events={inventoryEvents} />
+        <OrderDashboard events={orders.events} />
+        <InventoryPanel events={inventory.events} />
       </main>
     </div>
   )

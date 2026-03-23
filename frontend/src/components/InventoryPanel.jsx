@@ -1,7 +1,7 @@
 const TYPE_CONFIG = {
-  'inventory.reserved':     { label: 'Stock Reservado',    color: '#98c379', icon: '📦' },
+  'inventory.reserved': { label: 'Stock Reservado', color: '#98c379', icon: '📦' },
   'inventory.insufficient': { label: 'Stock Insuficiente', color: '#e06c75', icon: '🚫' },
-  'stock.low':              { label: 'Stock Bajo',         color: '#e5c07b', icon: '⚠️' },
+  'stock.low': { label: 'Stock Bajo', color: '#e5c07b', icon: '⚠️' },
 }
 
 export default function InventoryPanel({ events }) {
