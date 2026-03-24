@@ -24,7 +24,7 @@ export default function useSSE(url, eventTypes) {
                 const parsed = JSON.parse(event.data)
                 setEvents(prev => [{
                     id: event.lastEventId,
-                    type,
+                    type: eventType,
                     topic: parsed.topic,
                     data: parsed.data,
                     timestamp: new Date().toLocaleTimeString()

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+
+<body>
+    <h1>EventFlow — SSE Monitor</h1>
+    <div id="status" class="status disconnected">Desconectado</div>
+    <div id="counter" class="counter">Eventos recibidos: 0</div>
+    <div id="events" class="events"></div>
+    <script>
+        let count = 0;
+        const $events = $('#events');
+        const $status = $('#status');
+        const $counter = $('#counter');
+
+        const EVENT_LIST = [
+            "order.created",
+            "order.canceled",
+            "order.paid",
+            "order.shipped",
+            "order.delivered",
+            "order.returned",
+            "order.refunded",
+            "order.updated",
+            "order.deleted",
+            "order.restored",
+            "order.restored",
+        ]
+
+        function eventHandler(eventType, event) {
+            console.log(eventType, event);
+            count++;
+            $counter.text('Eventos recibidos: ' + count);
+
+            const parsed = JSON.parse(event.data);
+            const topic = parsed.topic || 'unknown';
+            const data = JSON.stringify(parsed.data, null, 2);
+
+            const topicClass = topic.split('.')[0] || topic;
+            const $div = $('<div>', { class: 'event ' + topicClass });
+            $div.html(`
+                    <span class="time">${new Date().toLocaleTimeString()} | ID: ${event.lastEventId}</span>
+                    <br><span class="type">${eventType}</span> <span class="topic">[${topic}]</span>
+                    <div class="data">${data}</div>
+                `);
+            $events.prepend($div);
+        }
+
+        function connect() {
+            const source = new EventSource("/api/events/stream");
+
+            source.onopen = () => {
+                console.log("Connected to SSE");
+                $status.text("Conectado");
+            }
+
+            source.onerror = (error) => {
+                console.log("Error: ", error);
+                $status.text("Desconectado");
+            }
+
+            $.each(EVENT_LIST, function(_, eventType) {
+                source.addEventListener(eventType, (event) => eventHandler(eventType, event));
+            });
+        }
+
+        connect();
+
+    </script>
+</body>
+
+</html>
