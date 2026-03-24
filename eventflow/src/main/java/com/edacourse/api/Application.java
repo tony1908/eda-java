@@ -60,6 +60,12 @@ import com.edacourse.api.shared.infrastructure.interfaces.sse.SseEventBridge;
 import com.edacourse.api.shared.infrastructure.interfaces.sse.EventSseResource;
 import com.edacourse.api.shared.infrastructure.interfaces.rest.StaticFileResource;
 
+import com.edacourse.api.backup.application.BackupService;
+import com.edacourse.api.backup.application.DataSeeder;
+import com.edacourse.api.backup.interfaces.BackupResource;
+import com.edacourse.api.backup.infrastructure.subscriber.BackupSubscriber;
+import com.edacourse.api.backup.infrastructure.restic.ResticClient;
+
 import java.net.URI;
 
 public class Application {
@@ -118,6 +124,15 @@ public class Application {
         // SSE broadcaster
         EventSseBroadcaster sseBroadcaster = new EventSseBroadcaster();
         new SseEventBridge(eventBus, sseBroadcaster, serializer);
+        
+        String resticRepository = System.getenv().getOrDefault("RESTIC_REPOSITORY", "rest:http://restic-server:8000/");
+        String resticPassword = System.getenv().getOrDefault("RESTIC_PASSWORD", "EventFlow123!");
+        ResticClient resticClient = new ResticClient(resticRepository, resticPassword);
+
+        // Backup context
+        BackupService backupService = new BackupService(eventBus, resticClient);
+        
+        BackupSubscriber backupSubscriber = new BackupSubscriber(eventBus, backupService);
 
         // DLQ handler (if broker supports it)
         if (eventBus instanceof DeadLetterHandler dlh) {
@@ -127,14 +142,16 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService))
                 .register(JacksonFeature.class)
                 .register(ObjectMapperProvider.class)
+                .register(DataSeeder.class)
                 .register(OrderResource.class)
                 .register(CatalogResource.class)
                 .register(SearchResource.class)
                 .register(StaticFileResource.class)
-                .register(EventSseResource.class);
+                .register(EventSseResource.class)
+                .register(BackupResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
@@ -145,6 +162,7 @@ public class Application {
         System.out.println("REST: " + BASE_URI + "api/products");
         System.out.println("SSE:  " + BASE_URI + "api/orders/events");
         System.out.println("REST: " + BASE_URI + "api/search");
+        System.out.println("REST: " + BASE_URI + "api/backups");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Apagando EventFlow...");

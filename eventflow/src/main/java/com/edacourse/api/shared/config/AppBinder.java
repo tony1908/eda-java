@@ -9,6 +9,8 @@ import com.edacourse.api.order.application.service.OrderService;
 import com.edacourse.api.order.interfaces.sse.OrderSseResource;
 import com.edacourse.api.catalog.application.service.CatalogService;
 import com.edacourse.api.search.application.service.SearchService;
+import com.edacourse.api.backup.application.BackupService;
+import com.edacourse.api.backup.application.DataSeeder;
 import jakarta.inject.Singleton;
 import com.edacourse.api.shared.infrastructure.sse.EventSseBroadcaster;
 
@@ -19,13 +21,16 @@ public class AppBinder extends AbstractBinder {
     private final CatalogService catalogService;
     private final SearchService searchService;
     private final EventSseBroadcaster eventSseBroadcaster;
+    private final BackupService backupService;
 
-    public AppBinder(EventSerializer serializer, 
-        EventBus eventBus, 
-        OrderSseResource sseResource, 
-        CatalogService catalogService, 
+
+    public AppBinder(EventSerializer serializer,
+        EventBus eventBus,
+        OrderSseResource sseResource,
+        CatalogService catalogService,
         SearchService searchService,
-        EventSseBroadcaster eventSseBroadcaster
+        EventSseBroadcaster eventSseBroadcaster,
+        BackupService backupService
     ) {
         this.serializer = serializer;
         this.eventBus = eventBus;
@@ -33,6 +38,7 @@ public class AppBinder extends AbstractBinder {
         this.catalogService = catalogService;
         this.searchService = searchService;
         this.eventSseBroadcaster = eventSseBroadcaster;
+        this.backupService = backupService;
     }
 
     @Override
@@ -47,5 +53,8 @@ public class AppBinder extends AbstractBinder {
 
         bind(searchService).to(SearchService.class);
         bind(eventSseBroadcaster).to(EventSseBroadcaster.class);
+
+        bind(backupService).to(BackupService.class);
+        bind(DataSeeder.class).to(DataSeeder.class).in(Singleton.class);
     }
 }

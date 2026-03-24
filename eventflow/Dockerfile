@@ -9,6 +9,8 @@ RUN mvn package -DskipTests && rm -f /app/target/original-*.jar
 # Stage 2: Run
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+RUN apt-get update && apt-get install -y restic && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /data/exports
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

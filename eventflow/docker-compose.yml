@@ -18,6 +18,9 @@ services:
       - CDC_STRATEGY=native
       - BROKER=rabbitmq
       - OPENSEARCH_URL=http://opensearch:9200
+      - RESTIC_REPOSITORY=rest:http://restic-server:8000/
+      - RESTIC_PASSWORD=EventFlow123!
+      - EXPORT_DIR=/data/exports
     depends_on:
       kafka:
         condition: service_healthy
@@ -28,6 +31,14 @@ services:
       opensearch:
         condition: service_healthy
 
+  restic-server:
+    image: restic/rest-server:latest
+    container_name: eventflow-restic-server
+    environment:
+      - DISABLE_AUTHENTICATION=1
+    volumes:
+      - backup-repo:/data
+  
   sqlserver-init:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: eventflow-sqlserver-init
@@ -130,3 +141,4 @@ volumes:
   rabbitmq-data:
   sqlserver-data:
   opensearch-data:
+  backup-repo:
