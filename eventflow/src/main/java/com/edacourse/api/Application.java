@@ -44,6 +44,7 @@ import com.edacourse.api.catalog.infrastructure.cdc.PollingCdcStrategy;
 
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import com.edacourse.api.catalog.infrastructure.cdc.TriggerOutboxStrategy;
@@ -154,6 +155,7 @@ public class Application {
         ResourceConfig config = new ResourceConfig()
                 .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder))
                 .register(JacksonFeature.class)
+                .register(MultiPartFeature.class)
                 .register(ObjectMapperProvider.class)
                 .register(OrderResource.class)
                 .register(CatalogResource.class)

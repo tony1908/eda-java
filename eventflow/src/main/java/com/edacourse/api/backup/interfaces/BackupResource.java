@@ -12,6 +12,12 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 @Path("/api/backups")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -50,6 +56,34 @@ public class BackupResource {
     public Response getStats() {
         String stats = backupService.getStats();
         return Response.ok(stats).build();
+    }
+
+    @POST
+    @Path("/upload")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response uploadFile(
+            @FormDataParam("file") InputStream fileInputStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail) {
+
+        if (fileInputStream == null || fileDetail == null || fileDetail.getFileName() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new BackupResponseDTO("", "No file provided")).build();
+        }
+
+        String fileName = fileDetail.getFileName();
+        String uploadDir = backupService.getExportDir() + "/uploads";
+        new File(uploadDir).mkdirs();
+        String filePath = uploadDir + "/" + fileName;
+
+        try {
+            Files.copy(fileInputStream, new File(filePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            return Response.serverError()
+                .entity(new BackupResponseDTO("", "Failed to save file: " + e.getMessage())).build();
+        }
+
+        String backupId = backupService.requestFileBackup(fileName, filePath);
+        return Response.ok(new BackupResponseDTO(backupId, "File backup requested for: " + fileName)).build();
     }
 
     @POST

@@ -89,6 +89,38 @@ public class BackupService {
         }
     }
 
+    public String requestFileBackup(String fileName, String filePath) {
+        String backupId = "fb_" + UUID.randomUUID().toString().substring(0, 8);
+        eventBus.publish("file-backup.requested", new FileBackupRequestedEvent(backupId, fileName, filePath));
+        return backupId;
+    }
+
+    public void executeFileBackup(String backupId, String fileName, String filePath) {
+        long startTime = System.currentTimeMillis();
+        try {
+            String snapshotId = resticClient.backup(filePath);
+
+            if (snapshotId != null) {
+                long duration = System.currentTimeMillis() - startTime;
+                long fileSize = new File(filePath).length();
+                eventBus.publish("backup.completed",
+                    new BackupCompletedEvent(backupId, snapshotId, fileSize, duration));
+                System.out.println("[BACKUP] Archivo '" + fileName + "' respaldado en " + duration + "ms. Snapshot: " + snapshotId);
+            } else {
+                eventBus.publish("backup.failed",
+                    new BackupFailedEvent(backupId, "Restic backup retorno null para archivo: " + fileName));
+            }
+
+        } catch (Exception e) {
+            eventBus.publish("backup.failed",
+                new BackupFailedEvent(backupId, "Error al respaldar archivo: " + e.getMessage()));
+        }
+    }
+
+    public String getExportDir() {
+        return exportDir;
+    }
+
     public String getSnapshots() {
         return resticClient.listSnapshots();
     }
