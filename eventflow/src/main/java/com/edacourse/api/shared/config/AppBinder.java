@@ -13,6 +13,7 @@ import com.edacourse.api.backup.application.BackupService;
 import com.edacourse.api.backup.domain.port.ProductSeeder;
 import jakarta.inject.Singleton;
 import com.edacourse.api.shared.infrastructure.sse.EventSseBroadcaster;
+import com.edacourse.api.filestream.application.service.FileStreamService;
 
 public class AppBinder extends AbstractBinder {
     private final EventSerializer serializer;
@@ -23,6 +24,7 @@ public class AppBinder extends AbstractBinder {
     private final EventSseBroadcaster eventSseBroadcaster;
     private final BackupService backupService;
     private final ProductSeeder productSeeder;
+    private final FileStreamService fileStreamService;
 
     public AppBinder(EventSerializer serializer,
         EventBus eventBus,
@@ -31,7 +33,8 @@ public class AppBinder extends AbstractBinder {
         SearchService searchService,
         EventSseBroadcaster eventSseBroadcaster,
         BackupService backupService,
-        ProductSeeder productSeeder
+        ProductSeeder productSeeder,
+        FileStreamService fileStreamService
     ) {
         this.serializer = serializer;
         this.eventBus = eventBus;
@@ -41,6 +44,7 @@ public class AppBinder extends AbstractBinder {
         this.eventSseBroadcaster = eventSseBroadcaster;
         this.backupService = backupService;
         this.productSeeder = productSeeder;
+        this.fileStreamService = fileStreamService;
     }
 
     @Override
@@ -58,5 +62,6 @@ public class AppBinder extends AbstractBinder {
 
         bind(backupService).to(BackupService.class);
         bind(productSeeder).to(ProductSeeder.class);
+        bind(fileStreamService).to(FileStreamService.class);
     }
 }

@@ -70,6 +70,11 @@ import com.edacourse.api.backup.interfaces.BackupResource;
 import com.edacourse.api.backup.infrastructure.subscriber.BackupSubscriber;
 import com.edacourse.api.backup.infrastructure.restic.ResticClient;
 
+import com.edacourse.api.filestream.application.service.FileStreamService;
+import com.edacourse.api.filestream.infrastructure.kafka.FileChunkConsumer;
+import com.edacourse.api.filestream.infrastructure.kafka.FileChunkProducer;
+import com.edacourse.api.filestream.interfaces.rest.FileStreamResource;
+
 import java.net.URI;
 
 public class Application {
@@ -145,6 +150,14 @@ public class Application {
         
         BackupSubscriber backupSubscriber = new BackupSubscriber(eventBus, backupService);
 
+        int chunkSize = Integer.parseInt(System.getenv().getOrDefault("CHUNK_SIZE_BYTES", "524288"));
+        FileChunkProducer chunkProducer = new FileChunkProducer("file.chunks");
+
+        // FileStream context
+        FileStreamService fileStreamService = new FileStreamService(eventBus, chunkProducer, chunkSize);
+
+        new FileChunkConsumer(eventBus, "file.chunks", "file-import-group");
+
         // DLQ handler (if broker supports it)
         if (eventBus instanceof DeadLetterHandler dlh) {
             dlh.onDeadLetter("orders.created", String.class, event ->
@@ -153,7 +166,7 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService))
                 .register(JacksonFeature.class)
                 .register(MultiPartFeature.class)
                 .register(ObjectMapperProvider.class)
@@ -162,7 +175,8 @@ public class Application {
                 .register(SearchResource.class)
                 .register(StaticFileResource.class)
                 .register(EventSseResource.class)
-                .register(BackupResource.class);
+                .register(BackupResource.class)
+                .register(FileStreamResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
 
