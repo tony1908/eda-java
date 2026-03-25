@@ -10,7 +10,8 @@ public record FileChunk(
     int partNumber,
     int totalParts,
     byte[] data,
-    String checksum
+    String checksum,
+    String extension
 ) {
     public boolean isLast() {
         return partNumber == totalParts;

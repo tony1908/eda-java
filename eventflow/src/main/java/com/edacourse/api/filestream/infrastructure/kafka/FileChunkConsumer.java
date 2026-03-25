@@ -28,7 +28,7 @@ public class FileChunkConsumer {
     private final ConcurrentHashMap<String, FileMetadata> fileMetadata = new ConcurrentHashMap<>();
     private volatile boolean running = true;
 
-    record FileMetadata(String fileName, int totalParts, long startTime) {}
+    record FileMetadata(String fileName, int totalParts, long startTime, String extension) {}
 
     public FileChunkConsumer(EventBus eventBus, String topic, String groupId) {
         this.eventBus = eventBus;
@@ -64,11 +64,12 @@ public class FileChunkConsumer {
         String fileName = getHeader(record, "fileName");
         int partNumber = Integer.parseInt(getHeader(record, "partNumber"));
         int totalParts = Integer.parseInt(getHeader(record, "totalParts"));
+        String extension = getHeader(record, "extension");
 
         System.out.println("[FILE-CONSUMER] Recibido chunk " + partNumber + "/" + totalParts + " de " + fileName);
 
         // Almacenar metadata
-        fileMetadata.putIfAbsent(fileId, new FileMetadata(fileName, totalParts, System.currentTimeMillis()));
+        fileMetadata.putIfAbsent(fileId, new FileMetadata(fileName, totalParts, System.currentTimeMillis(), extension));
 
         // Almacenar chunk ordenado por partNumber
         fileBuffers.computeIfAbsent(fileId, k -> new TreeMap<>()).put(partNumber, record.value());
@@ -99,7 +100,7 @@ public class FileChunkConsumer {
             if (!Files.exists(restoreDir)) {
                 Files.createDirectories(restoreDir);
             }
-            Path tempFile = Files.createTempFile(restoreDir, "import_", ".csv");
+            Path tempFile = Files.createTempFile(restoreDir, "import_", "." + meta.extension());
             Files.write(tempFile, fileData);
             System.out.println("[FILE-CONSUMER] Archivo guardado en: " + tempFile);
         } catch (Exception e) {

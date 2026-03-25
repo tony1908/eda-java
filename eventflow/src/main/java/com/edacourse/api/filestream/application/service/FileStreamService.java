@@ -45,8 +45,9 @@ public class FileStreamService {
             byte[] chunkData = new byte[end - start];
             System.arraycopy(fileData, start, chunkData, 0, chunkData.length);
             String checksum = computeChecksum(chunkData);
+            String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
 
-            FileChunk chunk = new FileChunk(fileId, fileName, i + 1, totalParts, chunkData, checksum);
+            FileChunk chunk = new FileChunk(fileId, fileName, i + 1, totalParts, chunkData, checksum, extension);
             System.out.println("[FILE-STREAM] Enviando chunk " + (i + 1) + "/" + totalParts + " de " + fileName);
             chunkProducer.sendChunk(chunk);
         }
