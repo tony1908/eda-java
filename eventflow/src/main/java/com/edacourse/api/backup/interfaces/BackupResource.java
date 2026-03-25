@@ -1,8 +1,8 @@
 package com.edacourse.api.backup.interfaces;
 
 import com.edacourse.api.backup.application.BackupService;
-import com.edacourse.api.backup.application.DataSeeder;
-import com.edacourse.api.backup.application.DataSeeder.SeedResult;
+import com.edacourse.api.backup.domain.port.ProductSeeder;
+import com.edacourse.api.backup.domain.port.ProductSeeder.SeedResult;
 import com.edacourse.api.backup.domain.dto.BackupRequestDTO;
 import com.edacourse.api.backup.domain.dto.RestoreRequestDTO;
 import com.edacourse.api.backup.domain.dto.BackupResponseDTO;
@@ -22,7 +22,7 @@ public class BackupResource {
     private BackupService backupService;
 
     @Inject
-    private DataSeeder dataSeeder;
+    private ProductSeeder productSeeder;
 
     @POST
     @Path("/request")
@@ -55,7 +55,7 @@ public class BackupResource {
     @POST
     @Path("/seed")
     public Response seedData(@QueryParam("count") @DefaultValue("10000") int count) {
-        SeedResult result = dataSeeder.seed(count);
+        SeedResult result = productSeeder.seed(count);
         return Response.ok(result).build();
     }
 }
