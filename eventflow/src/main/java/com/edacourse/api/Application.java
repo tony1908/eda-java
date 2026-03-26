@@ -80,6 +80,11 @@ import com.edacourse.api.cqrs.application.service.OrderQueryService;
 import com.edacourse.api.cqrs.interfaces.rest.CqrsResource;
 import com.edacourse.api.cqrs.infrastructure.projection.OrderProjection;
 
+import com.edacourse.api.eventsourcing.infrastructure.persistence.SqlServerEventStore;
+import com.edacourse.api.eventsourcing.application.service.EventSourcingService;
+import com.edacourse.api.eventsourcing.infrastructure.subscriber.EventStoreSubscriber;
+import com.edacourse.api.eventsourcing.interfaces.rest.EventSourcingResource;
+
 import java.net.URI;
 
 public class Application {
@@ -169,6 +174,14 @@ public class Application {
 
         // CQRS projection
         new OrderProjection(eventBus, orderQueryRepository);
+
+        // Event Sourcing
+        SqlServerEventStore eventStore = new SqlServerEventStore();
+        EventSourcingService eventSourcingService = new EventSourcingService(eventStore);
+
+        // Event Sourcing subscriber
+        new EventStoreSubscriber(eventBus, new com.edacourse.api.shared.infrastructure.serialization.JsonEventSerializer(), eventStore);
+        
         
 
         // DLQ handler (if broker supports it)
@@ -179,7 +192,7 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService, queryService))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService, queryService, eventSourcingService))
                 .register(JacksonFeature.class)
                 .register(MultiPartFeature.class)
                 .register(ObjectMapperProvider.class)
@@ -190,6 +203,7 @@ public class Application {
                 .register(EventSseResource.class)
                 .register(BackupResource.class)
                 .register(FileStreamResource.class)
+                .register(EventSourcingResource.class)
                 .register(CqrsResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);
