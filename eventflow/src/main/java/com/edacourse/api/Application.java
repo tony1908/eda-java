@@ -8,6 +8,10 @@ import com.edacourse.api.shared.infrastructure.messaging.DeadLetterHandler;
 import com.edacourse.api.shared.infrastructure.serialization.EventSerializer;
 import com.edacourse.api.shared.infrastructure.serialization.JsonEventSerializer;
 
+import com.edacourse.api.saga.application.service.CheckoutSagaOrchestrator;
+import com.edacourse.api.saga.infrastructure.persistence.SagaStateRepository;
+import com.edacourse.api.saga.interfaces.rest.SagaResource;
+
 import com.edacourse.api.order.interfaces.rest.OrderResource;
 import com.edacourse.api.order.interfaces.sse.OrderSseResource;
 import com.edacourse.api.order.interfaces.sse.SseBridgeSubscriber;
@@ -181,6 +185,11 @@ public class Application {
 
         // Event Sourcing subscriber
         new EventStoreSubscriber(eventBus, new com.edacourse.api.shared.infrastructure.serialization.JsonEventSerializer(), eventStore);
+
+        // Saga context
+        SagaStateRepository sagaStateRepository = new SagaStateRepository();
+        CheckoutSagaOrchestrator sagaOrchestrator = new CheckoutSagaOrchestrator(eventBus, sagaStateRepository);
+        
         
         
 
@@ -192,7 +201,7 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService, queryService, eventSourcingService))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService, queryService, eventSourcingService, sagaOrchestrator))
                 .register(JacksonFeature.class)
                 .register(MultiPartFeature.class)
                 .register(ObjectMapperProvider.class)
@@ -204,6 +213,7 @@ public class Application {
                 .register(BackupResource.class)
                 .register(FileStreamResource.class)
                 .register(EventSourcingResource.class)
+                .register(SagaResource.class)
                 .register(CqrsResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);

@@ -13,6 +13,7 @@ import com.edacourse.api.backup.application.BackupService;
 import com.edacourse.api.backup.domain.port.ProductSeeder;
 import jakarta.inject.Singleton;
 import com.edacourse.api.shared.infrastructure.sse.EventSseBroadcaster;
+import com.edacourse.api.saga.application.service.CheckoutSagaOrchestrator;
 import com.edacourse.api.filestream.application.service.FileStreamService;
 import com.edacourse.api.cqrs.application.service.OrderQueryService;
 import com.edacourse.api.eventsourcing.application.service.EventSourcingService;
@@ -29,6 +30,7 @@ public class AppBinder extends AbstractBinder {
     private final FileStreamService fileStreamService;
     private final OrderQueryService queryService;
     private final EventSourcingService eventSourcingService;
+    private final CheckoutSagaOrchestrator sagaOrchestrator;
 
     public AppBinder(EventSerializer serializer,
         EventBus eventBus,
@@ -40,7 +42,8 @@ public class AppBinder extends AbstractBinder {
         ProductSeeder productSeeder,
         FileStreamService fileStreamService,
         OrderQueryService queryService,
-        EventSourcingService eventSourcingService
+        EventSourcingService eventSourcingService,
+        CheckoutSagaOrchestrator sagaOrchestrator
     ) {
         this.serializer = serializer;
         this.eventBus = eventBus;
@@ -53,6 +56,7 @@ public class AppBinder extends AbstractBinder {
         this.fileStreamService = fileStreamService;
         this.queryService = queryService;
         this.eventSourcingService = eventSourcingService;
+        this.sagaOrchestrator = sagaOrchestrator;
     }
 
     @Override
@@ -73,5 +77,6 @@ public class AppBinder extends AbstractBinder {
         bind(fileStreamService).to(FileStreamService.class);
         bind(queryService).to(OrderQueryService.class);
         bind(eventSourcingService).to(EventSourcingService.class);
+        bind(sagaOrchestrator).to(CheckoutSagaOrchestrator.class);
     }
 }
