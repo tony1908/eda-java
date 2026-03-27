@@ -89,6 +89,11 @@ import com.edacourse.api.eventsourcing.application.service.EventSourcingService;
 import com.edacourse.api.eventsourcing.infrastructure.subscriber.EventStoreSubscriber;
 import com.edacourse.api.eventsourcing.interfaces.rest.EventSourcingResource;
 
+import com.edacourse.api.observability.application.service.ObservabilityService;
+import com.edacourse.api.observability.domain.model.EventMetrics;
+import com.edacourse.api.observability.infrastructure.subscriber.MetricsCollectorSubscriber;
+import com.edacourse.api.observability.interfaces.rest.ObservabilityResource;
+
 import java.net.URI;
 
 public class Application {
@@ -189,7 +194,11 @@ public class Application {
         // Saga context
         SagaStateRepository sagaStateRepository = new SagaStateRepository();
         CheckoutSagaOrchestrator sagaOrchestrator = new CheckoutSagaOrchestrator(eventBus, sagaStateRepository);
-        
+
+        // Observability context
+        EventMetrics metrics = new EventMetrics();
+        MetricsCollectorSubscriber metricsCollectorSubscriber = new MetricsCollectorSubscriber(eventBus, metrics);
+        ObservabilityService observabilityService = new ObservabilityService(metricsCollectorSubscriber);
         
         
 
@@ -201,7 +210,7 @@ public class Application {
 
         // Jersey HTTP server
         ResourceConfig config = new ResourceConfig()
-                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService, queryService, eventSourcingService, sagaOrchestrator))
+                .register(new AppBinder(serializer, eventBus, sseResource, catalogService, searchService, sseBroadcaster, backupService, productSeeder, fileStreamService, queryService, eventSourcingService, sagaOrchestrator, observabilityService))
                 .register(JacksonFeature.class)
                 .register(MultiPartFeature.class)
                 .register(ObjectMapperProvider.class)
@@ -214,6 +223,7 @@ public class Application {
                 .register(FileStreamResource.class)
                 .register(EventSourcingResource.class)
                 .register(SagaResource.class)
+                .register(ObservabilityResource.class)
                 .register(CqrsResource.class);
 
         HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), config);

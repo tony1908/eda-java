@@ -17,6 +17,7 @@ import com.edacourse.api.saga.application.service.CheckoutSagaOrchestrator;
 import com.edacourse.api.filestream.application.service.FileStreamService;
 import com.edacourse.api.cqrs.application.service.OrderQueryService;
 import com.edacourse.api.eventsourcing.application.service.EventSourcingService;
+import com.edacourse.api.observability.application.service.ObservabilityService;
 
 public class AppBinder extends AbstractBinder {
     private final EventSerializer serializer;
@@ -31,6 +32,7 @@ public class AppBinder extends AbstractBinder {
     private final OrderQueryService queryService;
     private final EventSourcingService eventSourcingService;
     private final CheckoutSagaOrchestrator sagaOrchestrator;
+    private final ObservabilityService observabilityService;
 
     public AppBinder(EventSerializer serializer,
         EventBus eventBus,
@@ -43,7 +45,8 @@ public class AppBinder extends AbstractBinder {
         FileStreamService fileStreamService,
         OrderQueryService queryService,
         EventSourcingService eventSourcingService,
-        CheckoutSagaOrchestrator sagaOrchestrator
+        CheckoutSagaOrchestrator sagaOrchestrator,
+        ObservabilityService observabilityService
     ) {
         this.serializer = serializer;
         this.eventBus = eventBus;
@@ -57,6 +60,7 @@ public class AppBinder extends AbstractBinder {
         this.queryService = queryService;
         this.eventSourcingService = eventSourcingService;
         this.sagaOrchestrator = sagaOrchestrator;
+        this.observabilityService = observabilityService;
     }
 
     @Override
@@ -78,5 +82,6 @@ public class AppBinder extends AbstractBinder {
         bind(queryService).to(OrderQueryService.class);
         bind(eventSourcingService).to(EventSourcingService.class);
         bind(sagaOrchestrator).to(CheckoutSagaOrchestrator.class);
+        bind(observabilityService).to(ObservabilityService.class);
     }
 }
